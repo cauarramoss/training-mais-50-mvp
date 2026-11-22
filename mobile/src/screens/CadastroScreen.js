@@ -1,102 +1,134 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Zap, ArrowRight } from 'lucide-react-native';
 import { api } from '../services/api';
 
 export default function CadastroScreen({ navigation }) {
   const [nome, setNome] = useState('');
+  const [idade, setIdade] = useState('');
   const [telefone, setTelefone] = useState('');
-  const [dataNascimento, setDataNascimento] = useState('');
-  const [sexo, setSexo] = useState('Feminino');
   const [senha, setSenha] = useState('');
 
   const handleCadastro = async () => {
     if (!nome || !telefone || !senha) {
-      Alert.alert('Atenção', 'Preencha nome, telefone e senha.');
+      Alert.alert('Atenção', 'Preencha todos os campos para continuar.');
       return;
     }
+    const anoNasc = idade ? 2026 - parseInt(idade, 10) : 1965;
     try {
       const novoUsuario = await api.cadastrar({
         nome,
         telefone,
-        dataNascimento: dataNascimento || '1965-01-01',
-        sexo,
+        dataNascimento: `${anoNasc}-01-01`,
+        sexo: 'Não informado',
         senha,
       });
       await AsyncStorage.setItem('@training50_user', JSON.stringify(novoUsuario));
       navigation.replace('Anamnese');
     } catch (err) {
-      Alert.alert('Erro no Cadastro', err.message);
+      Alert.alert('Erro', err.message);
     }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Criar Conta</Text>
-      <Text style={styles.subtitle}>Preencha seus dados básicos</Text>
+      <View style={styles.header}>
+        <View style={styles.logoCircle}>
+          <Zap size={40} color="#22C55E" />
+        </View>
+        <Text style={styles.title}>Training+50</Text>
+        <Text style={styles.subtitle}>Saúde e força em qualquer idade</Text>
+      </View>
 
       <Text style={styles.label}>Nome Completo</Text>
-      <TextInput style={styles.input} placeholder="Ex: Maria Oliveira" value={nome} onChangeText={setNome} />
-
-      <Text style={styles.label}>Telefone (com DDD)</Text>
       <TextInput
         style={styles.input}
-        placeholder="79999999999"
+        placeholder="Ex: João Silva"
+        placeholderTextColor="#6B7280"
+        value={nome}
+        onChangeText={setNome}
+      />
+
+      <Text style={styles.label}>Idade</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Ex: 55"
+        placeholderTextColor="#6B7280"
+        keyboardType="numeric"
+        value={idade}
+        onChangeText={setIdade}
+      />
+
+      <Text style={styles.label}>Telefone (para login)</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Ex: 79999999999"
+        placeholderTextColor="#6B7280"
         keyboardType="phone-pad"
         value={telefone}
         onChangeText={setTelefone}
       />
 
-      <Text style={styles.label}>Data de Nascimento (AAAA-MM-DD)</Text>
+      <Text style={styles.label}>Senha</Text>
       <TextInput
         style={styles.input}
-        placeholder="1965-05-10"
-        value={dataNascimento}
-        onChangeText={setDataNascimento}
+        placeholder="••••••••"
+        placeholderTextColor="#6B7280"
+        secureTextEntry
+        value={senha}
+        onChangeText={setSenha}
       />
 
-      <Text style={styles.label}>Sexo</Text>
-      <View style={styles.row}>
-        {['Feminino', 'Masculino'].map((item) => (
-          <TouchableOpacity
-            key={item}
-            style={[styles.chip, sexo === item && styles.chipActive]}
-            onPress={() => setSexo(item)}
-          >
-            <Text style={[styles.chipText, sexo === item && styles.chipTextActive]}>{item}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <TouchableOpacity style={styles.primaryButton} onPress={handleCadastro}>
+        <Text style={styles.primaryButtonText}>Continuar para Anamnese</Text>
+        <ArrowRight size={24} color="#FFFFFF" />
+      </TouchableOpacity>
 
-      <Text style={styles.label}>Senha</Text>
-      <TextInput style={styles.input} secureTextEntry placeholder="Crie uma senha" value={senha} onChangeText={setSenha} />
-
-      <TouchableOpacity style={styles.button} onPress={handleCadastro}>
-        <Text style={styles.buttonText}>Continuar para Anamnese</Text>
+      <TouchableOpacity style={styles.secondaryLink} onPress={() => navigation.navigate('Login')}>
+        <Text style={styles.secondaryLinkText}>Já possui conta? Entrar</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: 24, backgroundColor: '#F8FAFC', justifyContent: 'center' },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#0F172A', marginBottom: 4 },
-  subtitle: { fontSize: 16, color: '#475569', marginBottom: 24 },
-  label: { fontSize: 16, fontWeight: '600', color: '#1E293B', marginBottom: 6 },
+  container: { flexGrow: 1, backgroundColor: '#000000', padding: 24, justifyContent: 'center' },
+  header: { alignItems: 'center', marginBottom: 28 },
+  logoCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(22, 163, 74, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  title: { fontSize: 34, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 4 },
+  subtitle: { fontSize: 18, color: '#D1D5DB' },
+  label: { fontSize: 16, fontWeight: '500', color: '#E5E7EB', marginBottom: 6, marginLeft: 4 },
   input: {
-    backgroundColor: '#FFF',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 17,
+    backgroundColor: '#111827',
+    borderWidth: 2,
+    borderColor: '#374151',
+    borderRadius: 14,
+    padding: 18,
+    fontSize: 18,
+    color: '#FFFFFF',
     marginBottom: 16,
   },
-  row: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  chip: { flex: 1, padding: 14, borderRadius: 10, borderWidth: 1, borderColor: '#CBD5E1', alignItems: 'center', backgroundColor: '#FFF' },
-  chipActive: { backgroundColor: '#16A34A', borderColor: '#16A34A' },
-  chipText: { fontSize: 16, fontWeight: '600', color: '#334155' },
-  chipTextActive: { color: '#FFF' },
-  button: { backgroundColor: '#16A34A', padding: 16, borderRadius: 10, alignItems: 'center', marginTop: 8 },
-  buttonText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  primaryButton: {
+    backgroundColor: '#16A34A',
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: 12,
+  },
+  primaryButtonText: { color: '#FFFFFF', fontSize: 19, fontWeight: 'bold' },
+  secondaryLink: { marginTop: 20, alignItems: 'center' },
+  secondaryLinkText: { color: '#9CA3AF', fontSize: 16 },
 });

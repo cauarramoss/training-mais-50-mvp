@@ -1,105 +1,105 @@
-import React, { useState } from "react";
-import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    StyleSheet,
-    Alert,
-} from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { api } from "../services/api";
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Zap, ArrowRight } from 'lucide-react-native';
+import { api } from '../services/api';
 
 export default function LoginScreen({ navigation }) {
-    const [telefone, setTelefone] = useState("");
-    const [senha, setSenha] = useState("");
+  const [telefone, setTelefone] = useState('');
+  const [senha, setSenha] = useState('');
 
-    const handleLogin = async () => {
+  const handleLogin = async () => {
     try {
-        const usuario = await api.login(telefone, senha);
-        await AsyncStorage.setItem("@training50_user", JSON.stringify(usuario));
-        navigation.replace("MainTabs");
+      const usuario = await api.login(telefone, senha);
+      await AsyncStorage.setItem('@training50_user', JSON.stringify(usuario));
+      navigation.replace('MainTabs');
     } catch (err) {
-        Alert.alert("Atenção", err.message);
+      Alert.alert('Atenção', err.message);
     }
-    };
+  };
 
-    return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Training+50</Text>
-      <Text style={styles.subtitle}>Saúde, mobilidade e autonomia</Text>
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.logoCircle}>
+          <Zap size={40} color="#22C55E" />
+        </View>
+        <Text style={styles.title}>Training+50</Text>
+        <Text style={styles.subtitle}>Saúde e força em qualquer idade</Text>
+      </View>
 
-      <Text style={styles.label}>Telefone (com DDD)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Ex: 79999999999"
-        keyboardType="phone-pad"
-        value={telefone}
-        onChangeText={setTelefone}
-      />
+      <View style={styles.form}>
+        <Text style={styles.label}>Telefone (com DDD)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex: 79999999999"
+          placeholderTextColor="#6B7280"
+          keyboardType="phone-pad"
+          value={telefone}
+          onChangeText={setTelefone}
+        />
 
-      <Text style={styles.label}>Senha</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Digite sua senha"
-        secureTextEntry
-        value={senha}
-        onChangeText={setSenha}
-      />
+        <Text style={styles.label}>Senha</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="••••••••"
+          placeholderTextColor="#6B7280"
+          secureTextEntry
+          value={senha}
+          onChangeText={setSenha}
+        />
+      </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Entrar</Text>
+      <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}>
+        <Text style={styles.primaryButtonText}>Entrar</Text>
+        <ArrowRight size={24} color="#FFFFFF" />
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate("Cadastro")}>
-        <Text style={styles.link}>Ainda não tem conta? Cadastre-se</Text>
+      <TouchableOpacity style={styles.secondaryLink} onPress={() => navigation.navigate('Cadastro')}>
+        <Text style={styles.secondaryLinkText}>Não tem conta? Cadastre-se</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 24,
-    backgroundColor: "#F8FAFC",
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#0F172A",
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#475569",
-    textAlign: "center",
-    marginBottom: 32,
-  },
-  label: { fontSize: 16, fontWeight: "600", color: "#1E293B", marginBottom: 6 },
-  input: {
-    backgroundColor: "#FFF",
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 18,
+  container: { flexGrow: 1, backgroundColor: '#000000', padding: 24, justifyContent: 'center' },
+  header: { alignItems: 'center', marginBottom: 32 },
+  logoCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(22, 163, 74, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
   },
-  button: {
-    backgroundColor: "#16A34A",
-    padding: 16,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 8,
+  title: { fontSize: 36, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 6 },
+  subtitle: { fontSize: 18, color: '#D1D5DB', textAlign: 'center' },
+  form: { gap: 16 },
+  label: { fontSize: 16, fontWeight: '500', color: '#E5E7EB', marginBottom: 6, marginLeft: 4 },
+  input: {
+    backgroundColor: '#111827',
+    borderWidth: 2,
+    borderColor: '#374151',
+    borderRadius: 14,
+    padding: 18,
+    fontSize: 18,
+    color: '#FFFFFF',
+    marginBottom: 12,
   },
-  buttonText: { color: "#FFF", fontSize: 18, fontWeight: "bold" },
-  link: {
-    color: "#2563EB",
-    fontSize: 16,
-    textAlign: "center",
-    marginTop: 20,
-    fontWeight: "600",
+  primaryButton: {
+    backgroundColor: '#16A34A',
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: 16,
   },
+  primaryButtonText: { color: '#FFFFFF', fontSize: 20, fontWeight: 'bold' },
+  secondaryLink: { marginTop: 24, alignItems: 'center' },
+  secondaryLinkText: { color: '#4ADE80', fontSize: 17, fontWeight: '600' },
 });
