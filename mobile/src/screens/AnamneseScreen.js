@@ -1,142 +1,200 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Check } from 'lucide-react-native';
+import BackButton from '../components/BackButton';
+import SelectField from '../components/SelectField';
 import { api } from '../services/api';
 
 export default function AnamneseScreen({ navigation }) {
-  const [limitacao, setLimitacao] = useState('nenhuma');
-  const [objetivo, setObjetivo] = useState('Melhorar Mobilidade e Saúde');
-  const [nivel, setNivel] = useState('Sedentário / Iniciante');
+  const [peso, setPeso] = useState('');
+  const [altura, setAltura] = useState('');
+  const [objetivo, setObjetivo] = useState('');
+  const [nivelExperiencia, setNivelExperiencia] = useState('');
+  const [diasSemana, setDiasSemana] = useState('');
+  const [tempoDisponivel, setTempoDisponivel] = useState('');
+  const [tipoExercicio, setTipoExercicio] = useState('');
+  const [limitacao, setLimitacao] = useState('');
+  const [observacao, setObservacao] = useState('');
 
-  const doresOptions = [
-    { label: 'Não possuo dores', value: 'nenhuma' },
-    { label: 'Sim, nos joelhos', value: 'joelho' },
-    { label: 'Sim, na coluna/lombar', value: 'lombar' },
-    { label: 'Sim, nos ombros', value: 'ombro' },
-  ];
-
-  const objetivosOptions = [
-    'Melhorar Mobilidade e Saúde',
-    'Fortalecimento Muscular',
-    'Condicionamento Físico',
-  ];
-
-  const handleFinalizar = async () => {
+  const handleContinuar = async () => {
     try {
       const userJson = await AsyncStorage.getItem('@training50_user');
       const user = JSON.parse(userJson);
 
       const atualizado = await api.atualizarAnamnese(user.id, {
-        objetivo,
-        nivelExperiencia: nivel,
-        diasSemana: '3 dias',
-        tempoDisponivel: '30 minutos',
-        tipoExercicio: 'Funcional Leve',
-        limitacao,
+        ...user,
+        peso: peso ? parseFloat(peso.replace(',', '.')) : null,
+        altura: altura ? parseFloat(altura.replace(',', '.')) : null,
+        objetivo: objetivo || 'Melhorar Mobilidade e Saúde',
+        nivelExperiencia: nivelExperiencia || 'Sedentário / Iniciante',
+        diasSemana: diasSemana || '3 dias por semana',
+        tempoDisponivel: tempoDisponivel || '20 a 30 minutos',
+        tipoExercicio: tipoExercicio || 'Alongamento e Mobilidade',
+        limitacao: limitacao || 'Não possuo limitações',
+        observacao,
       });
 
       await AsyncStorage.setItem('@training50_user', JSON.stringify(atualizado));
       navigation.replace('MainTabs');
     } catch (err) {
-      Alert.alert('Erro', 'Não foi possível salvar os dados.');
+      Alert.alert('Erro', 'Não foi possível salvar os dados da anamnese.');
     }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <BackButton onClick={() => navigation.goBack()} />
+
       <View style={styles.header}>
-        <Text style={styles.title}>Conhecendo você</Text>
-        <Text style={styles.subtitle}>Responda para a IA montar um treino seguro e eficiente para você.</Text>
+        <Text style={styles.tag}>TRAINING +50</Text>
+        <Text style={styles.title}>Conte-nos um pouco sobre você</Text>
+        <Text style={styles.subtitle}>
+          Essas informações serão utilizadas para ajudar na personalização do seu treino.
+        </Text>
       </View>
 
-      <Text style={styles.label}>Possui dores articulares?</Text>
-      <View style={styles.optionsGroup}>
-        {doresOptions.map((item) => {
-          const active = limitacao === item.value;
-          return (
-            <TouchableOpacity
-              key={item.value}
-              style={[styles.optionBtn, active && styles.optionBtnActive]}
-              onPress={() => setLimitacao(item.value)}
-            >
-              <Text style={[styles.optionText, active && styles.optionTextActive]}>{item.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
+      <View style={styles.row2Col}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.label}>Peso (kg)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex: 75"
+            placeholderTextColor="#6B7280"
+            keyboardType="decimal-pad"
+            value={peso}
+            onChangeText={setPeso}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.label}>Altura (m)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex: 1,65"
+            placeholderTextColor="#6B7280"
+            keyboardType="decimal-pad"
+            value={altura}
+            onChangeText={setAltura}
+          />
+        </View>
       </View>
 
-      <Text style={styles.label}>Qual seu principal objetivo?</Text>
-      <View style={styles.optionsGroup}>
-        {objetivosOptions.map((item) => {
-          const active = objetivo === item;
-          return (
-            <TouchableOpacity
-              key={item}
-              style={[styles.optionBtn, active && styles.optionBtnActive]}
-              onPress={() => setObjetivo(item)}
-            >
-              <Text style={[styles.optionText, active && styles.optionTextActive]}>{item}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      <SelectField
+        label="Qual seu objetivo?"
+        placeholder="Selecione seu objetivo"
+        value={objetivo}
+        options={[
+          'Melhorar Mobilidade e Saúde',
+          'Fortalecimento Muscular',
+          'Condicionamento Físico',
+          'Emagrecimento Saudável',
+        ]}
+        onChange={setObjetivo}
+      />
 
-      <Text style={styles.label}>Nível de Atividade</Text>
-      <View style={styles.optionsGroup}>
-        {['Sedentário / Iniciante', 'Pratico atividades leves'].map((item) => {
-          const active = nivel === item;
-          return (
-            <TouchableOpacity
-              key={item}
-              style={[styles.optionBtn, active && styles.optionBtnActive]}
-              onPress={() => setNivel(item)}
-            >
-              <Text style={[styles.optionText, active && styles.optionTextActive]}>{item}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      <SelectField
+        label="Qual seu nível de experiência?"
+        placeholder="Selecione seu nível"
+        value={nivelExperiencia}
+        options={[
+          'Sedentário / Iniciante',
+          'Pratico atividades leves',
+          'Intermediário / Ativo',
+        ]}
+        onChange={setNivelExperiencia}
+      />
 
-      <TouchableOpacity style={styles.primaryButton} onPress={handleFinalizar}>
-        <Text style={styles.primaryButtonText}>Finalizar Cadastro</Text>
-        <Check size={24} color="#FFFFFF" />
+      <SelectField
+        label="Quantos dias por semana pretende treinar?"
+        value={diasSemana}
+        options={[
+          '2 dias por semana',
+          '3 dias por semana',
+          '4 dias por semana',
+          '5 ou mais dias por semana',
+        ]}
+        onChange={setDiasSemana}
+      />
+
+      <SelectField
+        label="Quanto tempo você tem disponível por treino?"
+        value={tempoDisponivel}
+        options={['20 a 30 minutos', '30 a 45 minutos', '45 a 60 minutos']}
+        onChange={setTempoDisponivel}
+      />
+
+      <SelectField
+        label="Que tipo de exercício você prefere?"
+        value={tipoExercicio}
+        options={[
+          'Alongamento e Mobilidade',
+          'Caminhada / Aeróbico Leve',
+          'Fortalecimento com Peso do Corpo',
+          'Musculação / Pesos Leves',
+        ]}
+        onChange={setTipoExercicio}
+      />
+
+      <SelectField
+        label="Você possui alguma limitação física ou restrição para realizar exercícios?"
+        value={limitacao}
+        options={[
+          'Não possuo limitações',
+          'Dores nos joelhos',
+          'Dores na coluna/lombar',
+          'Dores nos ombros',
+          'Hipertensão / Cardíaco',
+          'Outra limitação',
+        ]}
+        onChange={setLimitacao}
+      />
+
+      <Text style={styles.label}>Gostaria de descrever alguma outra observação?</Text>
+      <TextInput
+        style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+        multiline
+        placeholder="Ex: Tenho artrose leve no joelho direito..."
+        placeholderTextColor="#6B7280"
+        value={observacao}
+        onChangeText={setObservacao}
+      />
+
+      <TouchableOpacity style={styles.neonButton} onPress={handleContinuar} activeOpacity={0.85}>
+        <Text style={styles.neonButtonText}>Finalizar Cadastro</Text>
+        <Check size={24} color="#030712" />
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, backgroundColor: '#000000', padding: 24, paddingTop: 48 },
+  container: { flexGrow: 1, backgroundColor: '#000000', padding: 24, paddingTop: 44, paddingBottom: 40 },
   header: { marginBottom: 24 },
-  title: { fontSize: 30, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 8 },
-  subtitle: { fontSize: 17, color: '#D1D5DB', lineHeight: 24 },
-  label: { fontSize: 18, fontWeight: '600', color: '#E5E7EB', marginTop: 16, marginBottom: 10 },
-  optionsGroup: { gap: 10 },
-  optionBtn: {
+  tag: { color: '#3ee084', fontWeight: 'bold', fontSize: 14, letterSpacing: 1 },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#FFFFFF', marginTop: 4, marginBottom: 8 },
+  subtitle: { fontSize: 16, color: '#D1D5DB', lineHeight: 23 },
+  row2Col: { flexDirection: 'row', gap: 12 },
+  label: { fontSize: 16, fontWeight: '500', color: '#E5E7EB', marginBottom: 8, marginLeft: 4 },
+  input: {
     backgroundColor: '#111827',
     borderWidth: 2,
     borderColor: '#374151',
     borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
+    padding: 16,
+    fontSize: 18,
+    color: '#FFFFFF',
+    marginBottom: 16,
   },
-  optionBtnActive: {
-    backgroundColor: 'rgba(22, 163, 74, 0.2)',
-    borderColor: '#22C55E',
-  },
-  optionText: { fontSize: 17, fontWeight: '500', color: '#D1D5DB' },
-  optionTextActive: { color: '#4ADE80', fontWeight: 'bold' },
-  primaryButton: {
-    backgroundColor: '#16A34A',
+  neonButton: {
+    backgroundColor: '#3ee084',
     paddingVertical: 18,
+    paddingHorizontal: 24,
     borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    marginTop: 28,
-    marginBottom: 24,
+    marginTop: 12,
   },
-  primaryButtonText: { color: '#FFFFFF', fontSize: 20, fontWeight: 'bold' },
+  neonButtonText: { color: '#030712', fontSize: 20, fontWeight: '900' },
 });

@@ -1,62 +1,72 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { Play } from 'lucide-react-native';
+import { Play, CheckCircle2 } from 'lucide-react-native';
+import BackButton from '../components/BackButton';
 import { api } from '../services/api';
 
-export default function VideosScreen() {
-  const [exercicios, setExercicios] = useState([]);
+export default function VideosScreen({ navigation }) {
+  const [userData, setUserData] = useState({});
+  const [exercises, setExercises] = useState([]);
   const [treinoHoje, setTreinoHoje] = useState(null);
+  const [completed, setCompleted] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       const load = async () => {
-        const userJson = await AsyncStorage.getItem('@training50_user');
-        if (userJson) {
-          const u = JSON.parse(userJson);
+        const json = await AsyncStorage.getItem('@training50_user');
+        if (json) {
+          const u = JSON.parse(json);
+          setUserData(u);
           try {
             const treino = await api.buscarTreinoHoje(u.id);
             if (treino && treino.id && treino.exercicios?.length > 0) {
               setTreinoHoje(treino);
-              setExercicios(treino.exercicios);
+              setExercises(treino.exercicios);
               return;
             }
           } catch (e) {}
         }
-        const lista = await api.listarExercicios();
-        setExercicios(lista);
+        const catalogo = await api.listarExercicios();
+        setExercises(catalogo);
       };
       load();
     }, [])
   );
 
-  const handleFinalizarTreino = async () => {
-    if (!treinoHoje) {
-      Alert.alert('Concluído!', 'Parabéns por completar os exercícios de hoje!');
-      return;
+  const handleFinish = async () => {
+    setCompleted(true);
+    if (treinoHoje?.id) {
+      await api.concluirTreino(treinoHoje.id);
     }
-    const atualizado = await api.concluirTreino(treinoHoje.id);
-    setTreinoHoje(atualizado);
-    Alert.alert('Parabéns!', 'Treino finalizado com sucesso!');
+    setTimeout(() => {
+      setCompleted(false);
+      navigation.navigate('Início');
+    }, 1200);
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <BackButton onClick={() => navigation.navigate('Início')} />
+
       <View style={styles.header}>
         <Text style={styles.title}>Vídeos de Exercícios</Text>
-        <Text style={styles.subtitle}>Siga os movimentos com calma</Text>
+        <Text style={styles.subtitle}>
+          {userData.limitacao ? `Adaptado: ${userData.limitacao}` : 'Siga os movimentos com calma'}
+        </Text>
       </View>
 
       <View style={styles.list}>
-        {exercicios.map((ex, idx) => (
+        {exercises.map((ex, idx) => (
           <TouchableOpacity
             key={ex.id || idx}
             style={styles.card}
             onPress={() => ex.videoUrl && Linking.openURL(ex.videoUrl)}
+            activeOpacity={0.8}
           >
             <View style={styles.thumb}>
-              <Play size={30} color="#FFFFFF" />
+              <Play size={28} color="#FFFFFF" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.exName}>{ex.nome}</Text>
@@ -68,10 +78,15 @@ export default function VideosScreen() {
         ))}
       </View>
 
-      <TouchableOpacity style={styles.finishBtn} onPress={handleFinalizarTreino}>
-        <Text style={styles.finishBtnText}>
-          {treinoHoje?.concluido ? 'Treino Concluído ✅' : 'Finalizar Treino'}
-        </Text>
+      <TouchableOpacity style={styles.finishBtn} onPress={handleFinish} activeOpacity={0.85}>
+        {completed ? (
+          <>
+            <CheckCircle2 size={24} color="#4ADE80" />
+            <Text style={styles.finishBtnText}>Treino Concluído!</Text>
+          </>
+        ) : (
+          <Text style={styles.finishBtnText}>Finalizar Treino</Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );
@@ -79,10 +94,10 @@ export default function VideosScreen() {
 
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: '#000000', padding: 24, paddingTop: 44, paddingBottom: 40 },
-  header: { marginBottom: 24 },
+  header: { marginBottom: 22 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 6 },
-  subtitle: { fontSize: 18, color: '#22C55E', fontWeight: '500' },
-  list: { gap: 16 },
+  subtitle: { fontSize: 18, color: '#3ee084', fontWeight: '500' },
+  list: { gap: 14 },
   card: {
     backgroundColor: '#111827',
     borderWidth: 2,
@@ -94,8 +109,8 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   thumb: {
-    width: 76,
-    height: 76,
+    width: 64,
+    height: 64,
     borderRadius: 12,
     backgroundColor: '#1F2937',
     borderWidth: 1,
@@ -106,13 +121,16 @@ const styles = StyleSheet.create({
   exName: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
   exMeta: { fontSize: 15, color: '#D1D5DB', marginTop: 4 },
   finishBtn: {
-    marginTop: 32,
+    marginTop: 28,
     backgroundColor: 'rgba(22, 163, 74, 0.2)',
     borderWidth: 2,
     borderColor: '#22C55E',
     paddingVertical: 18,
     borderRadius: 14,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
   },
   finishBtnText: { color: '#4ADE80', fontSize: 20, fontWeight: 'bold' },
 });

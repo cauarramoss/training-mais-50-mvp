@@ -1,86 +1,121 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { User } from 'lucide-react-native';
+import { User, LogOut } from 'lucide-react-native';
+import BackButton from '../components/BackButton';
+import SelectField from '../components/SelectField';
 import { api } from '../services/api';
 
 export default function PerfilScreen({ navigation }) {
-  const [usuario, setUsuario] = useState(null);
-  const [nome, setNome] = useState('');
-  const [limitacao, setLimitacao] = useState('nenhuma');
+  const [userData, setUserData] = useState({});
+  const [savedMsg, setSavedMsg] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      AsyncStorage.getItem('@training50_user').then((u) => {
-        if (u) {
-          const parsed = JSON.parse(u);
-          setUsuario(parsed);
-          setNome(parsed.nome || '');
-          setLimitacao(parsed.limitacao || 'nenhuma');
-        }
+      AsyncStorage.getItem('@training50_user').then((json) => {
+        if (json) setUserData(JSON.parse(json));
       });
     }, [])
   );
 
-  const handleSalvar = async () => {
-    if (!usuario) return;
-    try {
-      const atualizado = await api.atualizarAnamnese(usuario.id, {
-        ...usuario,
-        nome,
-        limitacao,
-      });
-      await AsyncStorage.setItem('@training50_user', JSON.stringify(atualizado));
-      Alert.alert('Sucesso', 'Alterações salvas!');
-    } catch (e) {
-      Alert.alert('Erro', 'Não foi possível atualizar o perfil.');
-    }
+  const handleSave = async () => {
+    if (!userData.id) return;
+    const atualizado = await api.atualizarAnamnese(userData.id, {
+      ...userData,
+      peso: userData.peso ? parseFloat(String(userData.peso).replace(',', '.')) : null,
+      altura: userData.altura ? parseFloat(String(userData.altura).replace(',', '.')) : null,
+    });
+    await AsyncStorage.setItem('@training50_user', JSON.stringify(atualizado));
+    setSavedMsg(true);
+    setTimeout(() => setSavedMsg(false), 2000);
   };
 
-  const handleSair = async () => {
+  const handleLogout = async () => {
     await AsyncStorage.removeItem('@training50_user');
-    navigation.replace('Cadastro');
+    navigation.replace('Login');
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <BackButton onClick={() => navigation.navigate('Início')} />
+
       <View style={styles.profileHeader}>
         <View style={styles.avatar}>
-          <User size={52} color="#6B7280" />
+          <User size={48} color="#9CA3AF" />
         </View>
-        <Text style={styles.name}>{nome || 'João Silva'}</Text>
-        <Text style={styles.role}>Usuário Training+50</Text>
+        <Text style={styles.name}>{userData.nome || 'Visitante'}</Text>
+        <Text style={styles.phone}>{userData.telefone || 'Nenhum telefone cadastrado'}</Text>
       </View>
 
-      <Text style={styles.label}>Nome</Text>
-      <TextInput style={styles.input} value={nome} onChangeText={setNome} />
+      <Text style={styles.label}>Nome Completo</Text>
+      <TextInput
+        style={styles.input}
+        value={userData.nome || ''}
+        placeholder="Digite seu nome completo"
+        placeholderTextColor="#6B7280"
+        onChangeText={(v) => setUserData({ ...userData, nome: v })}
+      />
 
-      <Text style={styles.label}>Dores Articulares (Anamnese)</Text>
-      <View style={styles.optionsGroup}>
-        {[
-          { label: 'Não possuo dores', value: 'nenhuma' },
-          { label: 'Sim, nos joelhos', value: 'joelho' },
-          { label: 'Sim, na coluna/lombar', value: 'lombar' },
-        ].map((item) => {
-          const active = limitacao === item.value;
-          return (
-            <TouchableOpacity
-              key={item.value}
-              style={[styles.optionBtn, active && styles.optionBtnActive]}
-              onPress={() => setLimitacao(item.value)}
-            >
-              <Text style={[styles.optionText, active && styles.optionTextActive]}>{item.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
+      <View style={styles.row2Col}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.label}>Peso (kg)</Text>
+          <TextInput
+            style={styles.input}
+            value={userData.peso ? String(userData.peso) : ''}
+            placeholder="Ex: 75"
+            placeholderTextColor="#6B7280"
+            keyboardType="decimal-pad"
+            onChangeText={(v) => setUserData({ ...userData, peso: v })}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.label}>Altura (m)</Text>
+          <TextInput
+            style={styles.input}
+            value={userData.altura ? String(userData.altura) : ''}
+            placeholder="Ex: 1,65"
+            placeholderTextColor="#6B7280"
+            keyboardType="decimal-pad"
+            onChangeText={(v) => setUserData({ ...userData, altura: v })}
+          />
+        </View>
       </View>
 
-      <TouchableOpacity style={styles.primaryButton} onPress={handleSalvar}>
-        <Text style={styles.primaryButtonText}>Salvar Alterações</Text>
+      <SelectField
+        label="Objetivo Principal"
+        value={userData.objetivo || ''}
+        options={[
+          'Melhorar Mobilidade e Saúde',
+          'Fortalecimento Muscular',
+          'Condicionamento Físico',
+          'Emagrecimento Saudável',
+        ]}
+        onChange={(v) => setUserData({ ...userData, objetivo: v })}
+      />
+
+      <SelectField
+        label="Limitação Física (Anamnese)"
+        value={userData.limitacao || ''}
+        options={[
+          'Não possuo limitações',
+          'Dores nos joelhos',
+          'Dores na coluna/lombar',
+          'Dores nos ombros',
+          'Hipertensão / Cardíaco',
+          'Outra limitação',
+        ]}
+        onChange={(v) => setUserData({ ...userData, limitacao: v })}
+      />
+
+      <TouchableOpacity style={styles.neonButton} onPress={handleSave} activeOpacity={0.85}>
+        <Text style={styles.neonButtonText}>
+          {savedMsg ? 'Alterações Salvas!' : 'Salvar Alterações'}
+        </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleSair}>
+      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+        <LogOut size={20} color="#D1D5DB" />
         <Text style={styles.logoutText}>Sair da Conta</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -89,50 +124,51 @@ export default function PerfilScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: '#000000', padding: 24, paddingTop: 44, paddingBottom: 40 },
-  profileHeader: { alignItems: 'center', marginBottom: 28 },
+  profileHeader: { alignItems: 'center', marginBottom: 24 },
   avatar: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     backgroundColor: '#1F2937',
     borderWidth: 4,
-    borderColor: '#22C55E',
+    borderColor: '#3ee084',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14,
+    marginBottom: 12,
   },
-  name: { fontSize: 24, fontWeight: 'bold', color: '#FFFFFF' },
-  role: { fontSize: 17, color: '#22C55E', marginTop: 2 },
+  name: { fontSize: 24, fontWeight: 'bold', color: '#FFFFFF', textAlign: 'center' },
+  phone: { fontSize: 16, color: '#3ee084', marginTop: 2 },
   label: { fontSize: 16, fontWeight: '500', color: '#E5E7EB', marginBottom: 8, marginLeft: 4 },
+  row2Col: { flexDirection: 'row', gap: 12 },
   input: {
     backgroundColor: '#111827',
     borderWidth: 2,
     borderColor: '#374151',
     borderRadius: 14,
-    padding: 18,
+    padding: 16,
     fontSize: 18,
     color: '#FFFFFF',
-    marginBottom: 18,
+    marginBottom: 16,
   },
-  optionsGroup: { gap: 10, marginBottom: 20 },
-  optionBtn: {
-    backgroundColor: '#111827',
-    borderWidth: 2,
-    borderColor: '#374151',
-    borderRadius: 14,
-    padding: 16,
-  },
-  optionBtnActive: { backgroundColor: 'rgba(22, 163, 74, 0.2)', borderColor: '#22C55E' },
-  optionText: { fontSize: 16, color: '#D1D5DB' },
-  optionTextActive: { color: '#4ADE80', fontWeight: 'bold' },
-  primaryButton: {
-    backgroundColor: '#16A34A',
+  neonButton: {
+    backgroundColor: '#3ee084',
     paddingVertical: 18,
     borderRadius: 14,
     alignItems: 'center',
     marginTop: 8,
   },
-  primaryButtonText: { color: '#FFFFFF', fontSize: 20, fontWeight: 'bold' },
-  logoutBtn: { marginTop: 18, alignItems: 'center', padding: 12 },
-  logoutText: { color: '#EF4444', fontSize: 16, fontWeight: '600' },
+  neonButtonText: { color: '#030712', fontSize: 20, fontWeight: '900' },
+  logoutBtn: {
+    marginTop: 16,
+    backgroundColor: '#111827',
+    borderWidth: 2,
+    borderColor: '#374151',
+    paddingVertical: 16,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  logoutText: { color: '#D1D5DB', fontSize: 18, fontWeight: 'bold' },
 });

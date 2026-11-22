@@ -9,12 +9,16 @@ export default function LoginScreen({ navigation }) {
   const [senha, setSenha] = useState('');
 
   const handleLogin = async () => {
+    if (!telefone || !senha) {
+      Alert.alert('Atenção', 'Preencha telefone e senha.');
+      return;
+    }
     try {
-      const usuario = await api.login(telefone, senha);
+      const usuario = await api.login(telefone.trim(), senha);
       await AsyncStorage.setItem('@training50_user', JSON.stringify(usuario));
       navigation.replace('MainTabs');
     } catch (err) {
-      Alert.alert('Atenção', err.message);
+      Alert.alert('Erro no Login', err.message);
     }
   };
 
@@ -24,40 +28,43 @@ export default function LoginScreen({ navigation }) {
         <View style={styles.logoCircle}>
           <Zap size={40} color="#22C55E" />
         </View>
-        <Text style={styles.title}>Training+50</Text>
-        <Text style={styles.subtitle}>Saúde e força em qualquer idade</Text>
+        <Text style={styles.title}>Training +50</Text>
+        <Text style={styles.subtitle}>Sua vida com mais movimento!</Text>
       </View>
 
-      <View style={styles.form}>
-        <Text style={styles.label}>Telefone (com DDD)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ex: 79999999999"
-          placeholderTextColor="#6B7280"
-          keyboardType="phone-pad"
-          value={telefone}
-          onChangeText={setTelefone}
-        />
+      <Text style={styles.sectionHeading}>Entrar</Text>
 
-        <Text style={styles.label}>Senha</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="••••••••"
-          placeholderTextColor="#6B7280"
-          secureTextEntry
-          value={senha}
-          onChangeText={setSenha}
-        />
+      <Text style={styles.label}>Telefone</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Digite seu número de telefone"
+        placeholderTextColor="#6B7280"
+        keyboardType="phone-pad"
+        value={telefone}
+        onChangeText={setTelefone}
+      />
+
+      <Text style={styles.label}>Senha</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Digite sua senha"
+        placeholderTextColor="#6B7280"
+        secureTextEntry
+        value={senha}
+        onChangeText={setSenha}
+      />
+
+      <TouchableOpacity style={styles.neonButton} onPress={handleLogin} activeOpacity={0.85}>
+        <Text style={styles.neonButtonText}>ENTRAR</Text>
+        <ArrowRight size={24} color="#030712" />
+      </TouchableOpacity>
+
+      <View style={styles.footerRow}>
+        <Text style={styles.footerText}>Não possui cadastro? </Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Cadastro')}>
+          <Text style={styles.footerLink}>Fazer cadastro</Text>
+        </TouchableOpacity>
       </View>
-
-      <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}>
-        <Text style={styles.primaryButtonText}>Entrar</Text>
-        <ArrowRight size={24} color="#FFFFFF" />
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.secondaryLink} onPress={() => navigation.navigate('Cadastro')}>
-        <Text style={styles.secondaryLinkText}>Não tem conta? Cadastre-se</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -76,8 +83,8 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 36, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 6 },
   subtitle: { fontSize: 18, color: '#D1D5DB', textAlign: 'center' },
-  form: { gap: 16 },
-  label: { fontSize: 16, fontWeight: '500', color: '#E5E7EB', marginBottom: 6, marginLeft: 4 },
+  sectionHeading: { fontSize: 24, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 18, marginLeft: 4 },
+  label: { fontSize: 16, fontWeight: '500', color: '#E5E7EB', marginBottom: 8, marginLeft: 4 },
   input: {
     backgroundColor: '#111827',
     borderWidth: 2,
@@ -86,10 +93,10 @@ const styles = StyleSheet.create({
     padding: 18,
     fontSize: 18,
     color: '#FFFFFF',
-    marginBottom: 12,
+    marginBottom: 18,
   },
-  primaryButton: {
-    backgroundColor: '#16A34A',
+  neonButton: {
+    backgroundColor: '#3ee084',
     paddingVertical: 18,
     paddingHorizontal: 24,
     borderRadius: 14,
@@ -97,9 +104,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    marginTop: 16,
+    marginTop: 10,
   },
-  primaryButtonText: { color: '#FFFFFF', fontSize: 20, fontWeight: 'bold' },
-  secondaryLink: { marginTop: 24, alignItems: 'center' },
-  secondaryLinkText: { color: '#4ADE80', fontSize: 17, fontWeight: '600' },
+  neonButtonText: { color: '#030712', fontSize: 20, fontWeight: '900', letterSpacing: 1 },
+  footerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 28, flexWrap: 'wrap' },
+  footerText: { color: '#D1D5DB', fontSize: 18 },
+  footerLink: { color: '#4ADE80', fontSize: 18, fontWeight: 'bold', textDecorationLine: 'underline' },
 });
